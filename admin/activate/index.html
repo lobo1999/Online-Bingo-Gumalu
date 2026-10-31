@@ -4,94 +4,258 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Activar administrador | Bingo Eloina</title>
-  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#65142f">
+  <title>Acceso al Bingo | Eloina Lobo</title>
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
       display: grid;
       place-items: center;
       padding: 20px;
-      background: linear-gradient(135deg, #fffaf8, #f5dce3);
-      font-family: system-ui, sans-serif;
-      color: #65142f;
+      background: linear-gradient(135deg, #fffaf8, #f9dce7);
+      color: #421426;
+      font-family: system-ui, -apple-system, sans-serif;
     }
+
     .card {
-      width: min(100%, 480px);
-      padding: 32px;
-      border-radius: 24px;
+      width: min(100%, 490px);
+      padding: clamp(24px, 5vw, 42px);
       background: white;
-      box-shadow: 0 16px 50px #65142f22;
+      border: 1px solid #ecc2cd;
+      border-radius: 24px;
+      box-shadow: 0 20px 55px #65142f1c;
       text-align: center;
     }
-    h1 { font-size: 28px; }
-    p { line-height: 1.6; }
-    a { color: #92284b; font-weight: 800; }
+
+    .symbol {
+      font-size: 52px;
+    }
+
+    h1 {
+      margin: 12px 0;
+      color: #65142f;
+      font-size: clamp(28px, 5vw, 38px);
+    }
+
+    p {
+      line-height: 1.6;
+      font-size: 17px;
+    }
+
+    label {
+      display: block;
+      margin: 22px 0 8px;
+      font-weight: 800;
+      text-align: left;
+    }
+
+    input {
+      display: block;
+      width: 100%;
+      min-height: 54px;
+      padding: 12px 15px;
+      border: 2px solid #dba9ba;
+      border-radius: 12px;
+      color: #421426;
+      background: #fffafb;
+      font: inherit;
+      font-size: 18px;
+    }
+
+    input:focus {
+      outline: 3px solid #f1b8ce;
+      border-color: #92284b;
+    }
+
+    button,
+    .public-link {
+      display: block;
+      width: 100%;
+      min-height: 54px;
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      font: inherit;
+      font-weight: 800;
+      font-size: 17px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    button {
+      border: 0;
+      background: #92284b;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .public-link {
+      border: 1px solid #ecc2cd;
+      background: #fbeaf0;
+      color: #65142f;
+    }
+
+    .message {
+      min-height: 28px;
+      margin-top: 18px;
+      font-weight: 750;
+    }
+
+    .error {
+      color: #a01c39;
+    }
+
+    .success {
+      color: #216b46;
+    }
+
+    .hint {
+      color: #715261;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
   <main class="card">
-    <h1>🔐 Bingo de Eloina</h1>
-    <p id="status" role="status">
-      Verificando enlace privado…
-    </p>
+    <div class="symbol" aria-hidden="true">🔐</div>
+
+    <h1>Acceso al Bingo</h1>
+
     <p>
-      <a href="/bingo-home/">Ir al Bingo público</a>
+      <strong>90 cumpleaños de Eloina Lobo</strong>
     </p>
+
+    <p>
+      Introduce el token privado para acceder
+      al panel de control del Bingo.
+    </p>
+
+    <form id="token-form">
+      <label for="token">Token de administrador</label>
+
+      <input
+        id="token"
+        name="token"
+        type="password"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Introduce tu token"
+        required
+      >
+
+      <button id="submit" type="submit">
+        Activar acceso de administrador
+      </button>
+    </form>
+
+    <div
+      id="message"
+      class="message"
+      role="status"
+      aria-live="polite"
+    ></div>
+
+    <p class="hint">
+      El acceso dura 12 horas.
+      Solo puede haber un administrador activo.
+    </p>
+
+    <a class="public-link" href="/bingo-home/">
+      👀 Ver Bingo como espectador
+    </a>
   </main>
 
   <script>
-    (async () => {
-      const status = document.getElementById("status");
+    (() => {
+      "use strict";
 
-      const fragment = new URLSearchParams(
-        window.location.hash.slice(1)
-      );
+      const form = document.getElementById("token-form");
+      const input = document.getElementById("token");
+      const button = document.getElementById("submit");
+      const message = document.getElementById("message");
 
-      const token = fragment.get("token");
+      const invalidMessage =
+        "Token inválido. Por favor, contacta a Luis Lobo, Bingo Master, para obtener el token de acceso de administrador.";
 
-      // Remove the secret from the visible address immediately.
-      history.replaceState(
-        null,
-        "",
-        window.location.pathname
-      );
-
-      if (!token) {
-        status.textContent =
-          "Falta el token de activación en el enlace.";
-        return;
+      function showMessage(text, type = "error") {
+        message.textContent = text;
+        message.className = "message " + type;
       }
 
-      try {
-        const response = await fetch("/api/activate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "same-origin",
-          cache: "no-store",
-          body: JSON.stringify({ token })
-        });
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-        const data = await response.json();
+        const token = input.value.trim().toLowerCase();
 
-        if (!response.ok) {
-          throw new Error(
-            data.error || "No se pudo activar el administrador."
-          );
+        if (!token) {
+          showMessage(invalidMessage);
+          return;
         }
 
-        status.textContent =
-          "Acceso activado. Abriendo panel…";
+        button.disabled = true;
+        showMessage("Verificando token…", "success");
 
-        window.location.replace(
-          data.redirect || "/control-panel/"
+        try {
+          const response = await fetch("/api/activate", {
+            method: "POST",
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ token })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            if (response.status === 403) {
+              showMessage(invalidMessage);
+            } else {
+              showMessage(
+                data.error ||
+                "No se pudo activar el acceso."
+              );
+            }
+            return;
+          }
+
+          input.value = "";
+          showMessage(
+            "¡Acceso autorizado! Abriendo panel…",
+            "success"
+          );
+
+          window.location.replace(
+            data.redirect || "/control-panel/"
+          );
+        } catch {
+          showMessage(
+            "Error de conexión. Inténtalo de nuevo."
+          );
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      // Older private links may contain #token=...
+      // Remove the fragment so tokens are never reused automatically.
+      if (window.location.hash) {
+        history.replaceState(
+          null,
+          "",
+          window.location.pathname
         );
-      } catch (error) {
-        status.textContent = error.message;
       }
     })();
   </script>
