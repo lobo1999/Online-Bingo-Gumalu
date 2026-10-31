@@ -56,13 +56,11 @@
       padding: 18px;
       border: 1px solid #ecc2cd;
       border-radius: 20px;
-      background: #fff;
+      background: white;
       box-shadow: 0 12px 32px #65142f15;
     }
 
-    .current {
-      text-align: center;
-    }
+    .current { text-align: center; }
 
     .current-label {
       color: #a63d5c;
@@ -157,8 +155,8 @@
       place-items: center;
       pointer-events: none;
       overflow: hidden;
-      background: #37081b66;
-      backdrop-filter: blur(3px);
+      background: #37081bcc;
+      backdrop-filter: blur(5px);
     }
 
     .scene {
@@ -170,7 +168,7 @@
 
     .letters {
       position: absolute;
-      z-index: 1;
+      z-index: 4;
       top: 3%;
       left: 0;
       display: flex;
@@ -180,7 +178,9 @@
       font-size: clamp(65px, 13vw, 160px);
       font-weight: 1000;
       line-height: 1;
-      text-shadow: 0 6px 0 #fff1f1, 0 15px 30px #65142f88;
+      text-shadow:
+        0 6px 0 #fff1f1,
+        0 15px 30px #65142f88;
     }
 
     .letters span {
@@ -197,21 +197,28 @@
     .grandma {
       position: absolute;
       z-index: 2;
-      bottom: 5%;
+      bottom: 7%;
       left: 50%;
       width: auto;
       height: 76%;
-      max-width: 92%;
+      max-width: 94%;
       object-fit: contain;
       transform: translateX(-50%);
       transform-origin: 50% 85%;
       filter: drop-shadow(0 18px 24px #28051588);
     }
 
+    /* Wide GIF: allow its full composition to be visible. */
+    .grandma.is-gif {
+      width: 94%;
+      height: 65%;
+      bottom: 14%;
+    }
+
     .sparkles {
       position: absolute;
-      z-index: 3;
-      top: 35%;
+      z-index: 5;
+      top: 38%;
       width: 100%;
       text-align: center;
       font-size: clamp(35px, 7vw, 85px);
@@ -220,11 +227,11 @@
 
     .celebration-name {
       position: absolute;
-      z-index: 4;
+      z-index: 6;
       bottom: 1%;
       left: 50%;
-      max-width: 94%;
       width: max-content;
+      max-width: 96%;
       margin: 0;
       padding: 12px 24px;
       border: 3px solid #fff1f1;
@@ -235,11 +242,12 @@
       font-weight: 1000;
       text-align: center;
       transform: translateX(-50%);
+      box-shadow: 0 8px 24px #28051588;
     }
 
     .photo-error {
       position: absolute;
-      z-index: 5;
+      z-index: 7;
       top: 45%;
       left: 50%;
       width: min(90%, 440px);
@@ -252,7 +260,7 @@
       transform: translate(-50%, -50%);
     }
 
-    .celebration.active .grandma {
+    .celebration.active .grandma:not(.is-gif) {
       animation: dance 1.05s ease-in-out infinite;
     }
 
@@ -332,6 +340,7 @@
       .numbers { grid-template-columns: repeat(2, 1fr); }
       .ball { font-size: clamp(15px, 3.5vw, 23px); }
       .grandma { height: 70%; }
+      .grandma.is-gif { height: 56%; }
       .letters { top: 10%; font-size: 14vw; }
     }
 
@@ -386,7 +395,7 @@
         id="grandma"
         class="grandma"
         src="/assets/eloina.png"
-        alt="Eloina Lobo bailando"
+        alt="Eloina Lobo celebrando un Bingo"
       >
 
       <div class="sparkles" aria-hidden="true">
@@ -398,8 +407,7 @@
       </p>
 
       <div id="photo-error" class="photo-error" hidden>
-        No se encontró la fotografía.
-        Verifica /assets/eloina.png.
+        No se encontró la imagen de celebración.
       </div>
     </div>
   </section>
@@ -409,10 +417,11 @@
       createClient
     } from "https://esm.sh/@supabase/supabase-js@2";
 
-    // REPLACE THESE TWO PUBLIC VALUES.
-    // Never put the service-role key here.
-    const SUPABASE_URL = "https://riyzqsqlbawrpcacwkpt.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeXpxc3FsYmF3cnBjYWN3a3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NzQ0NjUsImV4cCI6MjEwOTA1MDQ2NX0.4Zw3A78yoC3lAdZdJ0VspmMf_jeHt50ACMv6lbkiKL8";
+    const SUPABASE_URL =
+      "https://riyzqsqlbawrpcacwkpt.supabase.co";
+
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeXpxc3FsYmF3cnBjYWN3a3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NzQ0NjUsImV4cCI6MjEwOTA1MDQ2NX0.4Zw3A78yoC3lAdZdJ0VspmMf_jeHt50ACMv6lbkiKL8";
 
     const supabase = createClient(
       SUPABASE_URL,
@@ -426,11 +435,23 @@
     );
 
     const $ = (id) => document.getElementById(id);
+
     const letters = ["B", "I", "N", "G", "O"];
     const colors = [
       "#79203d", "#96304e", "#b44765",
       "#a52b45", "#70152f"
     ];
+
+    const ANIMATIONS = [
+      "/assets/eloina.png",
+      "/assets/eloina-dancing-with-cats.gif",
+      "/assets/eloina2.png",
+      "/assets/eloina3.png",
+      "/assets/eloina4.png",
+      "/assets/eloina5.png"
+    ];
+
+    const CELEBRATION_MS = 8500;
 
     let currentGame = null;
     let celebrationTimer = null;
@@ -475,8 +496,27 @@
       });
     }
 
-    function playCelebration() {
+    function hideCelebration() {
+      clearTimeout(celebrationTimer);
+
       const overlay = $("celebration");
+      overlay.classList.remove("active");
+      overlay.hidden = true;
+      overlay.setAttribute("aria-hidden", "true");
+    }
+
+    function playCelebration(animationIndex, elapsedMs = 0) {
+      const overlay = $("celebration");
+      const image = $("grandma");
+
+      const index = Number.isInteger(animationIndex) &&
+        animationIndex >= 0 &&
+        animationIndex < ANIMATIONS.length
+          ? animationIndex
+          : 0;
+
+      const path = ANIMATIONS[index];
+      const isGif = path.toLowerCase().endsWith(".gif");
 
       clearTimeout(celebrationTimer);
 
@@ -484,15 +524,20 @@
       overlay.hidden = false;
       overlay.setAttribute("aria-hidden", "false");
 
-      void overlay.offsetWidth;
+      image.classList.toggle("is-gif", isGif);
+      $("photo-error").hidden = true;
 
+      // Reassign the URL to restart a GIF when it is selected.
+      // The fragment changes without requesting a different file.
+      image.src = path + "#celebration-" + Date.now();
+
+      void overlay.offsetWidth;
       overlay.classList.add("active");
 
-      celebrationTimer = setTimeout(() => {
-        overlay.classList.remove("active");
-        overlay.hidden = true;
-        overlay.setAttribute("aria-hidden", "true");
-      }, 8500);
+      celebrationTimer = setTimeout(
+        hideCelebration,
+        Math.max(0, CELEBRATION_MS - elapsedMs)
+      );
     }
 
     function applyGame(game, allowCelebration = true) {
@@ -510,6 +555,9 @@
         : null;
 
       const newSequence = Number(game.celebration_seq);
+      const animationIndex = Number(
+        game.celebration_animation ?? 0
+      );
 
       currentGame = game;
 
@@ -526,13 +574,18 @@
 
       drawBoard(numbers);
 
+      const elapsedMs = Date.now() -
+        Date.parse(game.celebration_at);
+
       if (
         allowCelebration &&
         oldSequence !== null &&
         newSequence > oldSequence &&
-        Date.now() - Date.parse(game.celebration_at) < 8500
+        Number.isFinite(elapsedMs) &&
+        elapsedMs >= 0 &&
+        elapsedMs < CELEBRATION_MS
       ) {
-        playCelebration();
+        playCelebration(animationIndex, elapsedMs);
       }
     }
 
@@ -595,7 +648,6 @@
 
     window.addEventListener("online", refreshGame);
 
-    // Recovery polling if a realtime event is missed.
     setInterval(refreshGame, 15000);
 
     await refreshGame();
