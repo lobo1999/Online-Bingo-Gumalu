@@ -1,0 +1,543 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#65142f">
+  <title>Panel de control | Bingo de Eloina</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #fffaf8, #fbeaf0);
+      color: #421426;
+      font-family: system-ui, sans-serif;
+    }
+
+    [hidden] { display: none !important; }
+
+    .page {
+      width: min(1200px, calc(100% - 24px));
+      margin: auto;
+      padding: 20px 0 50px;
+    }
+
+    .card {
+      padding: 24px;
+      margin-bottom: 18px;
+      border: 1px solid #ecc2cd;
+      border-radius: 20px;
+      background: white;
+      box-shadow: 0 10px 30px #65142f12;
+    }
+
+    h1, h2 { color: #65142f; }
+    h1 { font-size: clamp(28px, 4vw, 48px); }
+    h2 { margin-top: 0; }
+    p { line-height: 1.5; }
+
+    .current {
+      color: #65142f;
+      font-size: clamp(75px, 12vw, 140px);
+      font-weight: 1000;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat {
+      padding: 15px;
+      border-radius: 12px;
+      background: #fbeaf0;
+      text-align: center;
+    }
+
+    .stat strong {
+      display: block;
+      color: #65142f;
+      font-size: 32px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .btn {
+      min-height: 48px;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 12px;
+      background: #92284b;
+      color: white;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .btn-celebrate {
+      background: linear-gradient(135deg, #d13b65, #65142f);
+      border: 2px solid #f0b5c6;
+      font-size: 20px;
+    }
+
+    .btn-secondary {
+      background: #fbeaf0;
+      color: #65142f;
+      border: 1px solid #ecc2cd;
+    }
+
+    .btn-danger { background: #841b2c; }
+
+    .manual {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .manual label {
+      flex-basis: 100%;
+      font-weight: 800;
+    }
+
+    .manual input {
+      width: 125px;
+      min-height: 48px;
+      padding: 10px;
+      border: 2px solid #ecc2cd;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .column {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .letter {
+      padding: 12px 4px;
+      border-radius: 10px;
+      color: white;
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 1000;
+      text-align: center;
+    }
+
+    .numbers {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 5px;
+    }
+
+    .ball {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1;
+      border: 1px solid #ecc2cd;
+      border-radius: 8px;
+      background: #fff5f7;
+      color: #65142f;
+      font-size: clamp(12px, 1.7vw, 20px);
+      font-weight: 900;
+    }
+
+    .ball.called {
+      background: #65142f;
+      color: white;
+    }
+
+    .ball.latest {
+      background: #d13b65;
+      color: white;
+      outline: 2px solid #65142f;
+      outline-offset: -2px;
+    }
+
+    .message {
+      min-height: 24px;
+      color: #841b2c;
+      font-weight: 800;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 30px;
+      background: #fbeaf0;
+      color: #65142f;
+      font-weight: 800;
+    }
+
+    @media (max-width: 600px) {
+      .card { padding: 15px; }
+      .actions { display: grid; }
+      .numbers { grid-template-columns: repeat(2, 1fr); }
+      .ball { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="card">
+      <p>🔐 PANEL PRIVADO</p>
+      <h1>Bingo | 90 Cumpleaños Eloina Lobo</h1>
+      <p id="auth-status" class="status" role="status">
+        Verificando acceso…
+      </p>
+    </header>
+
+    <div id="admin-content" hidden>
+      <section class="card">
+        <h2>Número actual</h2>
+        <div id="current" class="current">—</div>
+
+        <div class="stats">
+          <div class="stat">
+            <strong id="called">0</strong>
+            Anunciados
+          </div>
+          <div class="stat">
+            <strong id="remaining">75</strong>
+            Restantes
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Control del juego</h2>
+
+        <form id="manual-form" class="manual">
+          <label for="manual-number">
+            Registrar número manual
+          </label>
+
+          <input
+            id="manual-number"
+            type="number"
+            min="1"
+            max="75"
+            required
+            placeholder="1–75"
+          >
+
+          <button class="btn" type="submit">
+            Registrar
+          </button>
+        </form>
+
+        <div class="actions">
+          <button
+            id="celebrate"
+            class="btn btn-celebrate"
+            type="button"
+          >
+            🎉 ¡BINGO!
+          </button>
+
+          <button id="random" class="btn" type="button">
+            🎲 Número aleatorio
+          </button>
+
+          <button
+            id="undo"
+            class="btn btn-secondary"
+            type="button"
+          >
+            ↶ Deshacer
+          </button>
+
+          <button
+            id="open-public"
+            class="btn btn-secondary"
+            type="button"
+          >
+            ↗ Abrir Bingo público
+          </button>
+
+          <button
+            id="reset"
+            class="btn btn-danger"
+            type="button"
+          >
+            ↺ Reiniciar
+          </button>
+        </div>
+
+        <div id="message" class="message" role="status"></div>
+      </section>
+
+      <section class="card">
+        <h2>Tablero de números</h2>
+        <div id="board" class="board"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (id) => document.getElementById(id);
+      const letters = ["B", "I", "N", "G", "O"];
+      const colors = [
+        "#79203d", "#96304e", "#b44765",
+        "#a52b45", "#70152f"
+      ];
+
+      let game = null;
+      let busy = false;
+      let authorized = false;
+
+      async function request(url, options = {}) {
+        const response = await fetch(url, {
+          credentials: "same-origin",
+          cache: "no-store",
+          ...options
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || "Error de comunicación."
+          );
+        }
+
+        return data;
+      }
+
+      function drawBoard(numbers) {
+        const board = $("board");
+        const called = new Set(numbers);
+        const latest = numbers.at(-1);
+
+        board.replaceChildren();
+
+        letters.forEach((letter, index) => {
+          const column = document.createElement("div");
+          column.className = "column";
+
+          const heading = document.createElement("div");
+          heading.className = "letter";
+          heading.style.background = colors[index];
+          heading.textContent = letter;
+
+          const grid = document.createElement("div");
+          grid.className = "numbers";
+
+          for (
+            let n = index * 15 + 1;
+            n <= (index + 1) * 15;
+            n++
+          ) {
+            const ball = document.createElement("div");
+            ball.className = "ball";
+            ball.textContent = n;
+
+            if (called.has(n)) ball.classList.add("called");
+            if (latest === n) ball.classList.add("latest");
+
+            grid.append(ball);
+          }
+
+          column.append(heading, grid);
+          board.append(column);
+        });
+      }
+
+      function render() {
+        if (!game) return;
+
+        const numbers = game.called_numbers || [];
+        const latest = numbers.at(-1);
+
+        $("current").textContent =
+          latest === undefined
+            ? "—"
+            : `${letters[Math.floor((latest - 1) / 15)]}-${latest}`;
+
+        $("called").textContent = numbers.length;
+        $("remaining").textContent = 75 - numbers.length;
+
+        $("undo").disabled = busy || numbers.length === 0;
+        $("random").disabled = busy || numbers.length === 75;
+
+        drawBoard(numbers);
+      }
+
+      function setBusy(value) {
+        busy = value;
+
+        document.querySelectorAll(
+          "#admin-content button, #manual-form input"
+        ).forEach((element) => {
+          element.disabled = value;
+        });
+
+        render();
+      }
+
+      async function refresh() {
+        try {
+          const data = await request("/api/game");
+
+          authorized = data.admin;
+
+          if (!authorized) {
+            $("auth-status").textContent =
+              "⛔ Sin acceso de administrador. Abre tu enlace privado de activación.";
+            $("admin-content").hidden = true;
+            return;
+          }
+
+          $("auth-status").textContent =
+            "🟢 Administrador autorizado";
+
+          $("admin-content").hidden = false;
+
+          if (
+            !game ||
+            Number(data.game.version) >= Number(game.version)
+          ) {
+            game = data.game;
+            render();
+          }
+        } catch (error) {
+          $("auth-status").textContent =
+            "⚠️ " + error.message;
+        }
+      }
+
+      async function perform(action, extra = {}) {
+        if (!authorized || busy) return;
+
+        setBusy(true);
+        $("message").textContent = "Procesando…";
+
+        try {
+          const data = await request("/api/action", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              action,
+              ...extra
+            })
+          });
+
+          game = data.game;
+          render();
+
+          const messages = {
+            announce: "Número registrado.",
+            random: "Número aleatorio anunciado.",
+            undo: "Último número deshecho.",
+            reset: "Bingo reiniciado.",
+            celebrate: "🎉 ¡Celebración enviada a todos!"
+          };
+
+          $("message").textContent = messages[action];
+
+          $("manual-number").value = "";
+        } catch (error) {
+          $("message").textContent = error.message;
+
+          if (
+            error.message.includes("session") ||
+            error.message.includes("Administrator")
+          ) {
+            await refresh();
+          }
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      $("manual-form").addEventListener(
+        "submit",
+        (event) => {
+          event.preventDefault();
+
+          perform("announce", {
+            number: Number($("manual-number").value)
+          });
+        }
+      );
+
+      $("random").addEventListener(
+        "click",
+        () => perform("random")
+      );
+
+      $("undo").addEventListener(
+        "click",
+        () => perform("undo")
+      );
+
+      $("celebrate").addEventListener(
+        "click",
+        () => perform("celebrate")
+      );
+
+      $("reset").addEventListener(
+        "click",
+        () => {
+          if (confirm(
+            "¿Seguro que deseas borrar todos los números?"
+          )) {
+            perform("reset");
+          }
+        }
+      );
+
+      $("open-public").addEventListener(
+        "click",
+        () => {
+          window.open("/bingo-home/", "_blank");
+        }
+      );
+
+      document.addEventListener(
+        "visibilitychange",
+        () => {
+          if (!document.hidden) refresh();
+        }
+      );
+
+      window.addEventListener("online", refresh);
+
+      // Admin polling; public viewers use Supabase Realtime.
+      setInterval(refresh, 5000);
+
+      refresh();
+    })();
+  </script>
+</body>
+</html>
