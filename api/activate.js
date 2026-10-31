@@ -14,38 +14,44 @@ import {
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, "POST")) return;
 
-const origin = req.headers.origin;
-const host = req.headers.host;
+  // Reject requests coming from other websites.
+  let validOrigin = false;
 
-if (
-  !origin ||
-  new URL(origin).host !== host ||
-  new URL(origin).protocol !== "https:"
-) {
-  return json(res, 403, {
-    error: "Request origin not allowed."
-  });
-}
+  try {
+    const origin = new URL(req.headers.origin);
+    const forwardedHost =
+      req.headers["x-forwarded-host"] || req.headers.host;
+
+    validOrigin =
+      origin.protocol === "https:" &&
+      origin.host === forwardedHost;
+  } catch {
+    validOrigin = false;
+  }
+
+  if (!validOrigin) {
+    return json(res, 403, {
+      error: "Request origin not allowed."
+    });
+  }
 
   try {
     const token = req.body?.token;
     const expectedHash =
       process.env.ADMIN_ACTIVATION_TOKEN_SHA256;
 
+    const validFormat =
+      typeof token === "string" &&
+      /^[a-f0-9]{64}$/.test(token) &&
+      typeof expectedHash === "string" &&
+      /^[a-f0-9]{64}$/.test(expectedHash);
+
     if (
-      typeof token !== "string" ||
-      !/^[a-f0-9]{64}$/.test(token) ||
-      !expectedHash ||
-      !/^[a-f0-9]{64}$/.test(expectedHash)
+      !validFormat ||
+      !safeEqual(sha256(token), expectedHash)
     ) {
       return json(res, 403, {
-        error: "Invalid activation link."
-      });
-    }
-
-    if (!safeEqual(sha256(token), expectedHash)) {
-      return json(res, 403, {
-        error: "Invalid activation link."
+        error: "Token inválido. Por favor, contacta a Luis Lobo, Bingo Master, para obtener el token de acceso de administrador."
       });
     }
 
@@ -68,7 +74,7 @@ if (
 
     if (activated !== true) {
       return json(res, 409, {
-        error: "This activation link has already been used."
+        error: "Ya existe un administrador activo. Inténtalo nuevamente cuando termine su sesión de 12 horas."
       });
     }
 
