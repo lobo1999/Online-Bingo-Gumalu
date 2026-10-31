@@ -1,3 +1,4 @@
+
 import { randomInt } from "node:crypto";
 
 import {
@@ -10,7 +11,6 @@ import {
   handleError
 } from "./_lib.js";
 
-
 const VALID_ACTIONS = new Set([
   "announce",
   "random",
@@ -19,25 +19,44 @@ const VALID_ACTIONS = new Set([
   "celebrate"
 ]);
 
+const ANIMATION_COUNT = 6;
+
 function chooseRandom(available) {
   return available[randomInt(available.length)];
+}
+
+function chooseAnimation(previous) {
+  const choices = [];
+
+  for (let i = 0; i < ANIMATION_COUNT; i++) {
+    if (i !== previous) choices.push(i);
+  }
+
+  return chooseRandom(choices);
+}
+
+function validRequestOrigin(req) {
+  try {
+    const origin = new URL(req.headers.origin);
+    const host =
+      req.headers["x-forwarded-host"] ||
+      req.headers.host;
+
+    return origin.protocol === "https:" &&
+      origin.host === host;
+  } catch {
+    return false;
+  }
 }
 
 export default async function handler(req, res) {
   if (!onlyMethod(req, res, "POST")) return;
 
-const origin = req.headers.origin;
-const host = req.headers.host;
-
-if (
-  !origin ||
-  new URL(origin).host !== host ||
-  new URL(origin).protocol !== "https:"
-) {
-  return json(res, 403, {
-    error: "Request origin not allowed."
-  });
-}
+  if (!validRequestOrigin(req)) {
+    return json(res, 403, {
+      error: "Request origin not allowed."
+    });
+  }
 
   try {
     if (!(await isAdmin(req))) {
@@ -58,6 +77,7 @@ if (
     let numbers = [...game.called_numbers];
     let celebrationSeq = Number(game.celebration_seq);
     let celebrationAt = game.celebration_at;
+    let animation = Number(game.celebration_animation ?? 0);
 
     if (action === "announce") {
       const number = Number(req.body?.number);
@@ -82,12 +102,11 @@ if (
     }
 
     if (action === "random") {
+      const called = new Set(numbers);
       const available = [];
 
       for (let n = 1; n <= 75; n++) {
-        if (!numbers.includes(n)) {
-          available.push(n);
-        }
+        if (!called.has(n)) available.push(n);
       }
 
       if (available.length === 0) {
@@ -114,6 +133,7 @@ if (
     }
 
     if (action === "celebrate") {
+      animation = chooseAnimation(animation);
       celebrationSeq += 1;
       celebrationAt = new Date().toISOString();
     }
@@ -126,7 +146,8 @@ if (
           expected_version: game.version,
           new_numbers: numbers,
           new_celebration_seq: celebrationSeq,
-          new_celebration_at: celebrationAt
+          new_celebration_at: celebrationAt,
+          new_celebration_animation: animation
         }
       }
     );
