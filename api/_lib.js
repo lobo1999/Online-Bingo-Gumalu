@@ -202,6 +202,7 @@ export function getPublicGame(game) {
     version: game.version,
     celebration_seq: game.celebration_seq,
     celebration_at: game.celebration_at,
+    celebration_animation: game.celebration_animation ?? 0,
     updated_at: game.updated_at
   };
 }
