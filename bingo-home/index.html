@@ -529,8 +529,15 @@
 
       // Reassign the URL to restart a GIF when it is selected.
       // The fragment changes without requesting a different file.
-      image.src = path + "#celebration-" + Date.now();
+// Remove the previous image before loading the selected one.
+image.removeAttribute("src");
 
+// Force the browser to recognize the image change.
+void image.offsetWidth;
+
+// Load the image selected by Supabase.
+image.src = path;
+      
       void overlay.offsetWidth;
       overlay.classList.add("active");
 
