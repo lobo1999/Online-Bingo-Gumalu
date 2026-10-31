@@ -411,7 +411,7 @@
 
           if (!authorized) {
             $("auth-status").textContent =
-              "⛔ Sin acceso de administrador. Abre tu enlace privado de activación.";
+              "🔒 Sesión expirada o sin autorización. Vuelve a la página de acceso e introduce tu token.";
             $("admin-content").hidden = true;
             return;
           }
